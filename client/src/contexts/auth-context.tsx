@@ -1,104 +1,115 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session, AuthError } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+import { api, publicApi } from '@/lib/api-wrapper'
+import { User, LoginResponse } from '@/types/users/users-types'
 
 interface AuthState {
   user: User | null
-  session: Session | null
   loading: boolean
+  isAuthenticated: boolean
 }
 
 interface AuthContextType extends AuthState {
-  signInWithGoogle: () => Promise<{ error: AuthError | null }>
-  signInWithEmail: (email: string) => Promise<{ error: AuthError | null }>
-  signOut: () => Promise<{ error: AuthError | null }>
+  signInUser: (email: string, password: string) => Promise<void>
+  signOutUser: () => Promise<void>
+  checkUserAuth: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
-    session: null,
     loading: true,
+    isAuthenticated: false,
   })
-
+  // Check user auth on mount
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession()
-
-      if (error) {
-        console.error('Error getting session:', error)
-      }
-
-      setAuthState({
-        user: session?.user ?? null,
-        session,
-        loading: false,
-      })
-    }
-
-    getInitialSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth event:', event, session?.user?.email)
-
-        setAuthState({
-          user: session?.user ?? null,
-          session,
-          loading: false,
-        })
-      }
-    )
-
-    return () => subscription.unsubscribe()
+    checkUserAuth()
   }, [])
 
-  const signInWithGoogle = async () => {
-    const redirectUrl = process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000/auth/callback'
-      : `${window.location.origin}/auth/callback`
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-      },
-    })
-
-    return { error }
+  const checkUserAuth = async () => {
+    try {
+      // Use API wrapper to check authentication and get current user
+      const currentUser = api.getCurrentUser()
+      if (currentUser) {
+        console.log('User is authenticated', currentUser)
+        setAuthState(prev => ({
+          ...prev,
+          user: currentUser,
+          isAuthenticated: true,
+          loading: false,
+        }))
+      } else {
+        setAuthState(prev => ({
+          ...prev,
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+        }))
+      }
+    } catch (error) {
+      console.log('User is not authenticated', error)
+      setAuthState(prev => ({
+        ...prev,
+        user: null,
+        isAuthenticated: false,
+        loading: false,
+      }))
+    }
   }
 
-  const signInWithEmail = async (email: string) => {
-    const redirectUrl = process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000/auth/callback'
-      : `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+  const signInUser = async (email: string, password: string) => {
+    try {
+      const response = await publicApi.post<LoginResponse>('/users/login', { email, password })
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    })
+      // Manually save user to localStorage since we're using publicApi
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('currentUser', JSON.stringify(response.user))
+      }
 
-    return { error }
+      setAuthState(prev => ({
+        ...prev,
+        user: response.user,
+        isAuthenticated: true,
+      }))
+      console.log('User is authenticated in signInUser', response.user)
+      router.push('/dashboard')
+    } catch (error) {
+      setAuthState(prev => ({
+        ...prev,
+        user: null,
+        isAuthenticated: false,
+      }))
+      console.log('User is not authenticated in signInUser', error)
+      throw error
+    }
   }
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    return { error }
+  const signOutUser = async () => {
+    try {
+      await publicApi.post('/users/signout')
+      publicApi.clearUser() // Clear user from API wrapper and localStorage
+    } catch (error) {
+      console.error('User logout error:', error)
+    } finally {
+      setAuthState(prev => ({
+        ...prev,
+        user: null,
+        isAuthenticated: false,
+      }))
+    }
   }
+
 
   const value: AuthContextType = {
     ...authState,
-    signInWithGoogle,
-    signInWithEmail,
-    signOut,
+    signInUser,
+    signOutUser,
+    checkUserAuth,
   }
 
   return (
