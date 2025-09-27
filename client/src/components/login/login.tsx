@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Mail, Chrome, Loader2 } from "lucide-react";
+import { Mail, Chrome, Loader2, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +25,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useAuth } from "@/contexts/auth-context";
-import { supabase } from "@/lib/supabase";
-import Link from "next/link";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -36,9 +34,10 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginCard() {
-  const { signInWithGoogle, loading } = useAuth();
+  const { loading, signInUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -48,39 +47,14 @@ export function LoginCard() {
     },
   });
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    const { error } = await signInWithGoogle();
-
-    if (error) {
-      setMessage(`Error: ${error.message}`);
-    }
-    setIsLoading(false);
-  };
-
-  const handleEmailPasswordSignUp = async (data: LoginFormData) => {
+  const handleEmailPasswordLogin = async (data: LoginFormData) => {
     setIsLoading(true);
 
     try {
-      const redirectUrl = process.env.NODE_ENV === 'development'
-        ? 'http://localhost:3000/auth/callback'
-        : `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
-
-      const { error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
-      });
-
-      if (error) {
-        setMessage(`Error: ${error.message}`);
-      } else {
-        setMessage("Check your email for the verification link!");
-      }
-    } catch (error) {
-      setMessage("An unexpected error occurred");
+      await signInUser(data.email, data.password);
+      setMessage("Login successful!");
+    } catch (error: any) {
+      setMessage(`Error: ${error.message || "An unexpected error occurred"}`);
     }
 
     setIsLoading(false);
@@ -97,19 +71,17 @@ export function LoginCard() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Welcome to Cortek Portal</CardTitle>
-          <Link  href="/signup">
+        <CardTitle>Welcome to Cortek Portal</CardTitle>
+        {/* <Link href="/signup">
             <Button className="hover:cursor-pointer" variant="link">Sign up</Button>
-          </Link>
-        </div>
-        <CardDescription>Create your account to get started</CardDescription>
+          </Link> */}
+        <CardDescription>Login to your account</CardDescription>
       </CardHeader>
 
       <CardContent>
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(handleEmailPasswordSignUp)}
+            onSubmit={form.handleSubmit(handleEmailPasswordLogin)}
             className="space-y-4"
           >
             <FormField
@@ -137,22 +109,37 @@ export function LoginCard() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Create a password"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        {...field}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute hover:cursor-pointer right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button type="submit" disabled={isLoading} className="w-full">
+            <Button type="submit" disabled={isLoading} className="w-full hover:cursor-pointer">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loggin in to account...
+                  Logging in...
                 </>
               ) : (
                 <>
@@ -176,7 +163,7 @@ export function LoginCard() {
           </div>
         )}
       </CardContent>
-
+{/* 
       <CardFooter className="flex-col gap-2">
         <div className="relative w-full">
           <div className="absolute inset-0 flex items-center">
@@ -198,7 +185,7 @@ export function LoginCard() {
           <Chrome className="mr-2 h-4 w-4" />
           Continue with Google
         </Button>
-      </CardFooter>
+      </CardFooter> */}
     </Card>
   );
 }
