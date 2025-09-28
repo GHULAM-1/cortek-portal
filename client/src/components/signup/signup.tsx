@@ -36,7 +36,7 @@ const signupSchema = z.object({
 type SignupFormData = z.infer<typeof signupSchema>;
 
 export function SignupCard() {
-  const { signInWithGoogle, loading } = useAuth();
+  const {  loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -48,15 +48,15 @@ export function SignupCard() {
     },
   });
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    const { error } = await signInWithGoogle();
+  // const handleGoogleSignIn = async () => {
+  //   setIsLoading(true);
+  //   const { error } = await signInWithGoogle();
 
-    if (error) {
-      setMessage(`Error: ${error.message}`);
-    }
-    setIsLoading(false);
-  };
+  //   if (error) {
+  //     setMessage(`Error: ${error.message}`);
+  //   }
+  //   setIsLoading(false);
+  // };
 
   const handleEmailPasswordSignUp = async (data: SignupFormData) => {
     setIsLoading(true);
@@ -99,7 +99,7 @@ export function SignupCard() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Welcome to Cortek Portal</CardTitle>
-          <Link  href="/login">
+          <Link  href="/auth/login">
             <Button className="hover:cursor-pointer" variant="link">Login</Button>
           </Link>
         </div>
@@ -189,7 +189,7 @@ export function SignupCard() {
           </div>
         </div>
 
-        <Button
+        {/* <Button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
           variant="outline"
@@ -197,7 +197,7 @@ export function SignupCard() {
         >
           <Chrome className="mr-2 h-4 w-4" />
           Continue with Google
-        </Button>
+        </Button> */}
       </CardFooter>
     </Card>
   );

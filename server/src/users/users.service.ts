@@ -18,7 +18,7 @@ export class UsersService {
 
   private getTableNameByRole(role: string): string {
     const tableMap = {
-      'superadmin': 'super-admin',
+      'superAdmin': 'superAdmin',
       'admin': 'admin',
       'team': 'team',
       'client': 'client'
@@ -137,7 +137,7 @@ export class UsersService {
         email: data.email,
         password: password, // Send original password before hashing
         role: data.role,
-        loginUrl: `${loginUrl}/login`,
+        loginUrl: `${loginUrl}/auth/login`,
       });
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
@@ -169,7 +169,8 @@ export class UsersService {
       .getServiceClient()
       .from('users')
       .select('id, email, name, role, created_at, updated_at')
-      .eq('is_deleted', false);
+      .eq('is_deleted', false)
+      .neq('role', 'superAdmin');
 
     if (error) {
       throw new Error(`Failed to fetch users: ${error.message}`);

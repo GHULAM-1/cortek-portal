@@ -1,4 +1,5 @@
-export type UserRole = 'superadmin' | 'admin' | 'team' | 'client';
+import { UserRole } from "@/lib/constants/roles";
+
 
 export type User = {
   id: string;

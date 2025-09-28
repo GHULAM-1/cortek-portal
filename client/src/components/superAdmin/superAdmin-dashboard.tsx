@@ -1,42 +1,19 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
+import { ROLES } from "@/lib/constants/roles";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { AppSidebar } from "./app-sidebar";
-import { SidebarProvider, SidebarInset } from "../ui/sidebar";
 import { ThemeToggle } from "../theme/theme-toggle";
-import { Dashboard } from "./home";
-import { ManageUsersContent } from "./manage-users";
+import { Dashboard } from "./dashboard";
 
 export default function SuperAdminDashboard() {
   const { user, isAuthenticated, loading, signOutUser } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("dashboard");
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return <Dashboard />;
-      case "manage-users":
-        return <ManageUsersContent />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
-  useEffect(() => {
-    if (!loading) {
-      if (user?.role !== "superadmin") {
-        router.push("/");
-      }
-    }
-  }, [isAuthenticated, user, loading, router]);
 
   const handleSignOut = async () => {
     await signOutUser();
-    router.push("/");
+    router.push("/auth/login");
   };
 
   if (loading) {
@@ -47,15 +24,12 @@ export default function SuperAdminDashboard() {
     );
   }
 
-  if (!isAuthenticated || user?.role !== "superadmin") {
+  if (!isAuthenticated || user?.role !== ROLES.SUPERADMIN) {
     return null;
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen w-full flex bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
-        <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        <SidebarInset className="w-full flex-1 min-w-0">
+      <div className="min-h-screen w-full flex flex-col bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
           {/* Header */}
           <header className="bg-white dark:bg-gray-800 shadow">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,7 +43,7 @@ export default function SuperAdminDashboard() {
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Button onClick={handleSignOut} className="hover:cursor-pointer" variant="outline">
+                  <Button onClick={handleSignOut} className="hover:cursor-pointer hover:bg-primary dark:hover:bg-primary" variant="outline">
                     Sign Out
                   </Button>
                   <ThemeToggle />
@@ -81,11 +55,9 @@ export default function SuperAdminDashboard() {
           {/* Main Content */}
           <main className="w-full py-6 px-6 flex-1 overflow-hidden">
             <div className="w-full max-w-none">
-              {renderContent()}
+              <Dashboard />
             </div>
           </main>
-        </SidebarInset>
       </div>
-    </SidebarProvider>
   );
 }

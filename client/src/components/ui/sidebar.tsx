@@ -215,7 +215,7 @@ function Sidebar({
       data-slot="sidebar"
     >
       {/* This is what handles the sidebar gap on desktop */}
-      <div
+      {/* <div
         data-slot="sidebar-gap"
         className={cn(
           "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
@@ -225,7 +225,7 @@ function Sidebar({
             ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
         )}
-      />
+      /> */}
       <div
         data-slot="sidebar-container"
         className={cn(

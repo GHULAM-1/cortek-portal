@@ -1,21 +1,21 @@
-export type Superadmin = {
+export type SuperAdmin = {
   id: string;
   email: string;
   name: string;
   created_at: string;
   updated_at: string;
-}
+};
 
-export type SuperadminWithPassword = Superadmin & {
+export type SuperAdminWithPassword = SuperAdmin & {
   password: string;
-}
+};
 
-export type SuperadminLoginResponse = {
+export type SuperAdminLoginResponse = {
   message: string;
-  superadmin: Superadmin;
-}
+  superAdmin: SuperAdmin;
+};
 
-export type SuperadminUpdateResponse = {
+export type SuperAdminUpdateResponse = {
   message: string;
-  superadmin: Superadmin;
-}
+  superAdmin: SuperAdmin;
+};

@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { api, publicApi } from '@/lib/api-wrapper'
 import { User, LoginResponse } from '@/types/users/users-types'
+import { useAuthStore } from '@/store/auth-store'
+import axios from 'axios'
 
 interface AuthState {
   user: User | null
@@ -12,7 +13,6 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signInUser: (email: string, password: string) => Promise<void>
   signOutUser: () => Promise<void>
   checkUserAuth: () => Promise<void>
 }
@@ -21,93 +21,57 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    loading: true,
-    isAuthenticated: false,
-  })
-  // Check user auth on mount
+  const { user, isAuthenticated, setUser, clearUser } = useAuthStore()
+  const [loading, setLoading] = useState(true)
+
+  // Check user auth on mount with delay for store hydration
   useEffect(() => {
-    checkUserAuth()
+    const timer = setTimeout(() => {
+      checkUserAuth()
+    }, 100) // Small delay to allow Zustand persist to hydrate
+
+    return () => clearTimeout(timer)
   }, [])
 
   const checkUserAuth = async () => {
     try {
-      // Use API wrapper to check authentication and get current user
-      const currentUser = api.getCurrentUser()
-      if (currentUser) {
-        console.log('User is authenticated', currentUser)
-        setAuthState(prev => ({
-          ...prev,
-          user: currentUser,
-          isAuthenticated: true,
-          loading: false,
-        }))
+      if (user) {
+        console.log('User is authenticated', user)
       } else {
-        setAuthState(prev => ({
-          ...prev,
-          user: null,
-          isAuthenticated: false,
-          loading: false,
-        }))
+        console.log('No user found in store')
+        // Don't clearUser() here as store might still be hydrating
       }
     } catch (error) {
       console.log('User is not authenticated', error)
-      setAuthState(prev => ({
-        ...prev,
-        user: null,
-        isAuthenticated: false,
-        loading: false,
-      }))
+      clearUser()
+    } finally {
+      setLoading(false)
     }
   }
 
-  const signInUser = async (email: string, password: string) => {
-    try {
-      const response = await publicApi.post<LoginResponse>('/users/login', { email, password })
-
-      // Manually save user to localStorage since we're using publicApi
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('currentUser', JSON.stringify(response.user))
-      }
-
-      setAuthState(prev => ({
-        ...prev,
-        user: response.user,
-        isAuthenticated: true,
-      }))
-      console.log('User is authenticated in signInUser', response.user)
-      router.push('/dashboard')
-    } catch (error) {
-      setAuthState(prev => ({
-        ...prev,
-        user: null,
-        isAuthenticated: false,
-      }))
-      console.log('User is not authenticated in signInUser', error)
-      throw error
-    }
-  }
 
   const signOutUser = async () => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+
     try {
-      await publicApi.post('/users/signout')
-      publicApi.clearUser() // Clear user from API wrapper and localStorage
+      await axios.post(`${API_BASE_URL}/users/signout`, {}, {
+        withCredentials: true,
+      })
+
+      clearUser()
     } catch (error) {
       console.error('User logout error:', error)
     } finally {
-      setAuthState(prev => ({
-        ...prev,
-        user: null,
-        isAuthenticated: false,
-      }))
+      clearUser()
+      router.push('/auth/login')
     }
   }
 
 
   const value: AuthContextType = {
-    ...authState,
-    signInUser,
+    user,
+    loading,
+    isAuthenticated,
     signOutUser,
     checkUserAuth,
   }

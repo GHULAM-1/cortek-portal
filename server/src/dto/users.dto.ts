@@ -17,7 +17,7 @@ export class CreateUserDto {
   @IsString()
   name: string;
 
-  @IsEnum(['superadmin', 'admin', 'team', 'client'])
+  @IsEnum(['superAdmin', 'admin', 'team', 'client'])
   role: UserRole;
 
   @IsString()
@@ -35,7 +35,7 @@ export class UpdateUserDto {
   email?: string;
 
   @IsOptional()
-  @IsEnum(['superadmin', 'admin', 'team', 'client'])
+  @IsEnum(['superAdmin', 'admin', 'team', 'client'])
   role?: UserRole;
 
   @IsOptional()

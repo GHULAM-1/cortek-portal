@@ -12,7 +12,7 @@ const apiClient = axios.create({
 });
 
 // Base Types
-export type SuperadminProfile = {
+export type SuperAdminProfile = {
   id: string;
   email: string;
   name: string;
@@ -20,47 +20,47 @@ export type SuperadminProfile = {
   updated_at: string;
 };
 
-export type LoginRequest = Pick<SuperadminProfile, 'email'> & {
+export type LoginRequest = Pick<SuperAdminProfile, 'email'> & {
   password: string;
 };
 
 export type LoginResponse = {
   message: string;
-  superadmin: SuperadminProfile;
+  superAdmin: SuperAdminProfile;
 };
 
-export type UpdateProfileRequest = Partial<Omit<SuperadminProfile, 'id' | 'created_at' | 'updated_at'>> & {
+export type UpdateProfileRequest = Partial<Omit<SuperAdminProfile, 'id' | 'created_at' | 'updated_at'>> & {
   password?: string;
 };
 
 export type UpdateProfileResponse = {
   message: string;
-  superadmin: SuperadminProfile;
+  superAdmin: SuperAdminProfile;
 };
 
 // API Methods
 export const superAdminApi = {
   // Login
   async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post('/superadmin/login', data);
+    const response = await apiClient.post('/superAdmin/login', data);
     return response.data;
   },
 
   // Signout
   async signout(): Promise<{ message: string }> {
-    const response = await apiClient.post('/superadmin/signout');
+    const response = await apiClient.post('/superAdmin/signout');
     return response.data;
   },
 
   // Get Profile
-  async getProfile(): Promise<SuperadminProfile> {
-    const response = await apiClient.get('/superadmin/profile');
+  async getProfile(): Promise<SuperAdminProfile> {
+    const response = await apiClient.get('/superAdmin/profile');
     return response.data;
   },
 
   // Update Profile
   async updateProfile(data: UpdateProfileRequest): Promise<UpdateProfileResponse> {
-    const response = await apiClient.patch('/superadmin/profile', data);
+    const response = await apiClient.patch('/superAdmin/profile', data);
     return response.data;
   },
 };

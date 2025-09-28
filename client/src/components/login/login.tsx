@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { Mail, Chrome, Loader2, Eye, EyeOff } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,21 +25,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useAuth } from "@/contexts/auth-context";
-
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+import { loginSchema, LoginForm } from "@/client-schema/auth-schema";
+import { loginUser } from "@/api/auth/auth-api";
+import { useAuthStore } from "@/store/auth-store";
+import { useRouter } from "next/navigation";
 
 export function LoginCard() {
-  const { loading, signInUser } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { loading } = useAuth();
+  const { setUser } = useAuthStore();
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<LoginFormData>({
+  const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
@@ -47,17 +45,25 @@ export function LoginCard() {
     },
   });
 
-  const handleEmailPasswordLogin = async (data: LoginFormData) => {
-    setIsLoading(true);
-
-    try {
-      await signInUser(data.email, data.password);
+  // React Query mutation for login
+  const loginMutation = useMutation({
+    mutationFn: loginUser,
+    onSuccess: (response) => {
+      setUser(response.user);
       setMessage("Login successful!");
-    } catch (error: any) {
+      router.push('/dashboard');
+    },
+    onError: (error: any) => {
       setMessage(`Error: ${error.message || "An unexpected error occurred"}`);
-    }
+    },
+  });
 
-    setIsLoading(false);
+  const handleEmailPasswordLogin = (data: LoginForm) => {
+    setMessage("");
+    loginMutation.mutate({
+      email: data.email,
+      password: data.password,
+    });
   };
 
   if (loading) {
@@ -72,9 +78,6 @@ export function LoginCard() {
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle>Welcome to Cortek Portal</CardTitle>
-        {/* <Link href="/signup">
-            <Button className="hover:cursor-pointer" variant="link">Sign up</Button>
-          </Link> */}
         <CardDescription>Login to your account</CardDescription>
       </CardHeader>
 
@@ -135,8 +138,8 @@ export function LoginCard() {
               )}
             />
 
-            <Button type="submit" disabled={isLoading} className="w-full hover:cursor-pointer">
-              {isLoading ? (
+            <Button type="submit" disabled={loginMutation.isPending} className="w-full hover:cursor-pointer">
+              {loginMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Logging in...
@@ -163,29 +166,6 @@ export function LoginCard() {
           </div>
         )}
       </CardContent>
-{/* 
-      <CardFooter className="flex-col gap-2">
-        <div className="relative w-full">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
-
-        <Button
-          onClick={handleGoogleSignIn}
-          disabled={isLoading}
-          variant="outline"
-          className="w-full"
-        >
-          <Chrome className="mr-2 h-4 w-4" />
-          Continue with Google
-        </Button>
-      </CardFooter> */}
     </Card>
   );
 }

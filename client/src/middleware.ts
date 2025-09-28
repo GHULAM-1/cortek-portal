@@ -1,28 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ROLES } from './lib/constants/roles'
 
 // Route access definitions
 const ROUTE_ACCESS = {
-  superadmin: ['/super-admin','/admin','/team','/client'],
-  admin: ['/admin','/team','/client'],
-  team: ['/team'],
-  client: ['/client'],
+  [ROLES.SUPERADMIN]: ['/superAdmin','/admin','/team','/client'],
+  [ROLES.ADMIN]: ['/admin','/team','/client'],
+  [ROLES.TEAM]: ['/team'],
+  [ROLES.CLIENT]: ['/client'],
   legacy: ['/dashboard'] // old dashboard route that redirects based on role
 }
 
 // Role dashboard mappings
 const ROLE_DASHBOARDS = {
-  superadmin: '/super-admin/dashboard',
-  admin: '/admin/dashboard',
-  team: '/team/dashboard',
-  client: '/client/dashboard'
+  [ROLES.SUPERADMIN]: '/superAdmin/dashboard',
+  [ROLES.ADMIN]: '/admin/dashboard',
+  [ROLES.TEAM]: '/team/dashboard',
+  [ROLES.CLIENT]: '/client/dashboard'
 }
 
 // Get all protected routes
 const ALL_PROTECTED_ROUTES = [
-  ...ROUTE_ACCESS.superadmin,
-  ...ROUTE_ACCESS.admin,
-  ...ROUTE_ACCESS.team,
-  ...ROUTE_ACCESS.client,
+  ...ROUTE_ACCESS[ROLES.SUPERADMIN],
+  ...ROUTE_ACCESS[ROLES.ADMIN],
+  ...ROUTE_ACCESS[ROLES.TEAM],
+  ...ROUTE_ACCESS[ROLES.CLIENT],
   ...ROUTE_ACCESS.legacy
 ]
 
@@ -72,7 +73,7 @@ export async function middleware(request: NextRequest) {
     })
 
     if (!response.ok) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      return NextResponse.redirect(new URL('/auth/login', request.url))
     }
 
     const user = await response.json()
@@ -103,7 +104,7 @@ export async function middleware(request: NextRequest) {
 
   } catch (error) {
     console.log('💥 Error calling API:', error)
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
   return NextResponse.next()
@@ -113,8 +114,8 @@ export const config = {
   matcher: [
     '/dashboard',
     '/dashboard/:path*',
-    '/super-admin',
-    '/super-admin/:path*',
+    '/superAdmin',
+    '/superAdmin/:path*',
     '/admin',
     '/admin/:path*',
     '/team',

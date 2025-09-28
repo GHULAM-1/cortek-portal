@@ -14,7 +14,7 @@ import { SuperadminService } from './super-admin.service';
 import { UpdateSuperadminDto, LoginSuperadminDto } from '../dto/super-admin.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller('superadmin')
+@Controller('superAdmin')
 export class SuperadminController {
   constructor(private readonly superadminService: SuperadminService) {}
 

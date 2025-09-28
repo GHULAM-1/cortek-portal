@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/co
 import { SupabaseService } from '../supabase/supabase.service';
 import { JwtAuthService } from '../auth/jwt.service';
 import { UpdateSuperadminDto, LoginSuperadminDto } from '../dto/super-admin.dto';
-import { Superadmin } from '../types/super-admin-types';
+import { SuperAdmin } from '../types/super-admin-types';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -15,32 +15,32 @@ export class SuperadminService {
   async login(loginDto: LoginSuperadminDto) {
     const { email, password } = loginDto;
 
-    const { data: superadmin, error } = await this.supabaseService
+    const { data: superAdmin, error } = await this.supabaseService
       .getServiceClient()
-      .from('"super-admin"')
+      .from('"superAdmin"')
       .select('*')
       .eq('email', email)
       .single();
 
-    if (error || !superadmin) {
+    if (error || !superAdmin) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, superadmin.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, superAdmin.password_hash);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { password_hash, ...result } = superadmin;
+    const { password_hash, ...result } = superAdmin;
     const token = await this.jwtAuthService.generateToken({
       id: result.id,
       email: result.email,
-      role: 'superadmin'
+      role: 'superAdmin'
     });
 
     return {
       message: 'Login successful',
-      superadmin: result,
+      superAdmin: result,
       token: token.access_token,
     };
   }
@@ -51,18 +51,18 @@ export class SuperadminService {
     };
   }
 
-  async getProfile(): Promise<Superadmin> {
-    const { data: superadmin, error } = await this.supabaseService
+  async getProfile(): Promise<SuperAdmin> {
+    const { data: superAdmin, error } = await this.supabaseService
       .getServiceClient()
-      .from('"super-admin"')
+      .from('"superAdmin"')
       .select('id, email, name, created_at, updated_at')
       .single();
 
-    if (error || !superadmin) {
-      throw new NotFoundException('Superadmin not found');
+    if (error || !superAdmin) {
+      throw new NotFoundException('SuperAdmin not found');
     }
 
-    return superadmin;
+    return superAdmin;
   }
 
   async updateProfile(updateDto: UpdateSuperadminDto) {
@@ -84,7 +84,7 @@ export class SuperadminService {
 
     const { data, error } = await this.supabaseService
       .getServiceClient()
-      .from('"super-admin"')
+      .from('"superAdmin"')
       .update(updateData)
       .select('id, email, name, created_at, updated_at')
       .single();
@@ -95,7 +95,7 @@ export class SuperadminService {
 
     return {
       message: 'Profile updated successfully',
-      superadmin: data,
+      superAdmin: data,
     };
   }
 }

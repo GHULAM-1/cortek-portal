@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import { ToastHandler } from "@/components/toast-handler";
+import { ConditionalLayout } from "@/components/layout/conditional-layout";
+import { QueryProvider } from "@/providers/query-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,18 +32,26 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased max-w-[1200px] mx-auto`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AuthProvider>{children}</AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <QueryProvider>
+            <AuthProvider>
+              <ConditionalLayout>
+                {children}
+              </ConditionalLayout>
+            </AuthProvider>
+          </QueryProvider>
+          <Suspense fallback={null}>
             <ToastHandler />
-            <Toaster />
-          </ThemeProvider>
+          </Suspense>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
